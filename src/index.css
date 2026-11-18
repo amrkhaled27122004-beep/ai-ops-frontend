@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-cyber-border;
+  }
+  body {
+    @apply bg-cyber-bg text-slate-200 font-sans antialiased;
+  }
+  ::selection {
+    @apply bg-cyber-cyan/30 text-white;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-cyber-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-cyber-border-bright rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-cyber-cyan/50;
+  }
+}
+
+@layer components {
+  .cyber-card {
+    @apply bg-cyber-surface border border-cyber-border rounded-xl;
+  }
+  .cyber-card-hover {
+    @apply transition-all duration-300 hover:border-cyber-cyan/40 hover:shadow-[0_0_20px_rgba(34,211,238,0.08)];
+  }
+  .cyber-grid-bg {
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .cyber-glow {
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.15);
+  }
+  .cyber-glow-amber {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+  }
+  .cyber-glow-red {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+  .cyber-text-glow {
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  }
+  .scan-line {
+    position: relative;
+    overflow: hidden;
+  }
+  .scan-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), transparent);
+    animation: scan-line-anim 3s linear infinite;
+  }
+}
+
+@keyframes scan-line-anim {
+  0% { top: 0; }
+  100% { top: 100%; }
+}

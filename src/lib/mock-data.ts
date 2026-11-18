@@ -1,0 +1,408 @@
+import type {
+  Server,
+  Alert,
+  ActivityEvent,
+  RiskTrendPoint,
+  ServiceHealth,
+} from '@/types';
+
+const now = Date.now();
+const minutesAgo = (m: number) => new Date(now - m * 60000).toISOString();
+
+function generateRiskHistory(base: number, volatility: number): { timestamp: string; risk: number }[] {
+  const points: { timestamp: string; risk: number }[] = [];
+  for (let i = 23; i >= 0; i--) {
+    const variance = (Math.sin(i * 0.5) + Math.random() * 0.5 - 0.25) * volatility;
+    const risk = Math.max(0, Math.min(100, Math.round(base + variance * 15)));
+    points.push({
+      timestamp: new Date(now - i * 3600000).toISOString(),
+      risk,
+    });
+  }
+  return points;
+}
+
+export const servers: Server[] = [
+  {
+    id: 'srv-001',
+    name: 'Web-01',
+    hostname: 'web-01.aiops.io',
+    region: 'us-east-1',
+    status: 'warning',
+    riskScore: 68,
+    cpu: 72,
+    memory: 85,
+    disk: 61,
+    network: 34,
+    uptime: 99.92,
+    temperature: 68,
+    predictions: [
+      {
+        metric: 'Memory',
+        currentValue: 85,
+        predictedValue: 96,
+        timeToThreshold: '~2h 15m',
+        confidence: 92,
+        recommendation: 'Increase memory allocation or restart memory-intensive processes to prevent OOM kill.',
+      },
+    ],
+    riskHistory: generateRiskHistory(68, 1.2),
+  },
+  {
+    id: 'srv-002',
+    name: 'DB-Master',
+    hostname: 'db-master.aiops.io',
+    region: 'us-east-1',
+    status: 'critical',
+    riskScore: 88,
+    cpu: 91,
+    memory: 78,
+    disk: 89,
+    network: 56,
+    uptime: 99.87,
+    temperature: 74,
+    predictions: [
+      {
+        metric: 'Disk',
+        currentValue: 89,
+        predictedValue: 98,
+        timeToThreshold: '~45m',
+        confidence: 97,
+        recommendation: 'Initiate emergency log rotation and archiving. Disk exhaustion imminent within 1 hour.',
+      },
+      {
+        metric: 'CPU',
+        currentValue: 91,
+        predictedValue: 97,
+        timeToThreshold: '~1h 30m',
+        confidence: 85,
+        recommendation: 'Scale read replicas or offload batch queries to prevent query timeout cascade.',
+      },
+    ],
+    riskHistory: generateRiskHistory(88, 1.5),
+  },
+  {
+    id: 'srv-003',
+    name: 'API-GW-01',
+    hostname: 'api-gw-01.aiops.io',
+    region: 'eu-west-1',
+    status: 'healthy',
+    riskScore: 22,
+    cpu: 45,
+    memory: 52,
+    disk: 38,
+    network: 67,
+    uptime: 99.99,
+    temperature: 55,
+    predictions: [
+      {
+        metric: 'CPU',
+        currentValue: 45,
+        predictedValue: 58,
+        timeToThreshold: '~6h',
+        confidence: 78,
+        recommendation: 'No action required. Trend is within normal operational parameters.',
+      },
+    ],
+    riskHistory: generateRiskHistory(22, 0.6),
+  },
+  {
+    id: 'srv-004',
+    name: 'Cache-01',
+    hostname: 'cache-01.aiops.io',
+    region: 'eu-west-1',
+    status: 'healthy',
+    riskScore: 15,
+    cpu: 38,
+    memory: 61,
+    disk: 22,
+    network: 78,
+    uptime: 99.98,
+    temperature: 52,
+    predictions: [
+      {
+        metric: 'Network',
+        currentValue: 78,
+        predictedValue: 82,
+        timeToThreshold: '~12h',
+        confidence: 71,
+        recommendation: 'Stable. Monitor during peak hours.',
+      },
+    ],
+    riskHistory: generateRiskHistory(15, 0.4),
+  },
+  {
+    id: 'srv-005',
+    name: 'Queue-Worker-01',
+    hostname: 'queue-w-01.aiops.io',
+    region: 'ap-south-1',
+    status: 'warning',
+    riskScore: 54,
+    cpu: 63,
+    memory: 71,
+    disk: 44,
+    network: 29,
+    uptime: 99.91,
+    temperature: 63,
+    predictions: [
+      {
+        metric: 'CPU',
+        currentValue: 63,
+        predictedValue: 82,
+        timeToThreshold: '~3h 45m',
+        confidence: 81,
+        recommendation: 'Consider scaling worker pool by 2 instances to reduce queue backlog pressure.',
+      },
+    ],
+    riskHistory: generateRiskHistory(54, 0.9),
+  },
+  {
+    id: 'srv-006',
+    name: 'Storage-01',
+    hostname: 'storage-01.aiops.io',
+    region: 'us-west-2',
+    status: 'offline',
+    riskScore: 100,
+    cpu: 0,
+    memory: 0,
+    disk: 95,
+    network: 0,
+    uptime: 0,
+    temperature: 0,
+    predictions: [],
+    riskHistory: generateRiskHistory(100, 0),
+  },
+  {
+    id: 'srv-007',
+    name: 'ML-Inference-01',
+    hostname: 'ml-inf-01.aiops.io',
+    region: 'us-west-2',
+    status: 'healthy',
+    riskScore: 31,
+    cpu: 58,
+    memory: 64,
+    disk: 41,
+    network: 45,
+    uptime: 99.96,
+    temperature: 61,
+    predictions: [
+      {
+        metric: 'Memory',
+        currentValue: 64,
+        predictedValue: 72,
+        timeToThreshold: '~8h',
+        confidence: 74,
+        recommendation: 'Normal operation. GPU memory utilization trending slightly upward.',
+      },
+    ],
+    riskHistory: generateRiskHistory(31, 0.5),
+  },
+  {
+    id: 'srv-008',
+    name: 'LB-01',
+    hostname: 'lb-01.aiops.io',
+    region: 'us-east-1',
+    status: 'healthy',
+    riskScore: 18,
+    cpu: 41,
+    memory: 48,
+    disk: 29,
+    network: 88,
+    uptime: 99.99,
+    temperature: 54,
+    predictions: [
+      {
+        metric: 'Network',
+        currentValue: 88,
+        predictedValue: 91,
+        timeToThreshold: '~10h',
+        confidence: 69,
+        recommendation: 'Within normal range. Peak traffic handling is optimal.',
+      },
+    ],
+    riskHistory: generateRiskHistory(18, 0.3),
+  },
+];
+
+export const alerts: Alert[] = [
+  {
+    id: 'alt-001',
+    serverId: 'srv-002',
+    serverName: 'DB-Master',
+    severity: 'critical',
+    status: 'active',
+    title: 'Disk exhaustion imminent',
+    description: 'Database master disk usage at 89% and climbing. Predicted to hit 98% within 45 minutes.',
+    metric: 'Disk Usage',
+    threshold: 90,
+    current: 89,
+    createdAt: minutesAgo(8),
+    prediction: 'Full disk in ~45m — query failures will cascade across all services.',
+  },
+  {
+    id: 'alt-002',
+    serverId: 'srv-002',
+    serverName: 'DB-Master',
+    severity: 'high',
+    status: 'active',
+    title: 'CPU saturation approaching',
+    description: 'CPU at 91% sustained. Query latency increasing by 15% per minute.',
+    metric: 'CPU Usage',
+    threshold: 85,
+    current: 91,
+    createdAt: minutesAgo(12),
+    prediction: 'CPU will hit 97% in ~1h 30m. Read replicas needed to prevent timeout cascade.',
+  },
+  {
+    id: 'alt-003',
+    serverId: 'srv-001',
+    serverName: 'Web-01',
+    severity: 'medium',
+    status: 'active',
+    title: 'Memory pressure detected',
+    description: 'Memory usage at 85% with upward trend. OOM kill risk within 2 hours.',
+    metric: 'Memory Usage',
+    threshold: 80,
+    current: 85,
+    createdAt: minutesAgo(22),
+    prediction: 'Memory will reach 96% in ~2h 15m. Recommend process restart or memory scaling.',
+  },
+  {
+    id: 'alt-004',
+    serverId: 'srv-005',
+    serverName: 'Queue-Worker-01',
+    severity: 'medium',
+    status: 'acknowledged',
+    title: 'Queue backlog growing',
+    description: 'Worker CPU at 63% and rising. Queue depth increasing steadily.',
+    metric: 'CPU Usage',
+    threshold: 60,
+    current: 63,
+    createdAt: minutesAgo(35),
+    prediction: 'CPU will reach 82% in ~3h 45m. Scale worker pool by 2 instances.',
+  },
+  {
+    id: 'alt-005',
+    serverId: 'srv-006',
+    serverName: 'Storage-01',
+    severity: 'critical',
+    status: 'active',
+    title: 'Server unresponsive',
+    description: 'Storage-01 has gone offline. No heartbeat received for 4 minutes.',
+    metric: 'Uptime',
+    threshold: 99.9,
+    current: 0,
+    createdAt: minutesAgo(4),
+    prediction: 'Failover to Storage-02 required immediately. Data replication lag at 0.',
+  },
+  {
+    id: 'alt-006',
+    serverId: 'srv-001',
+    serverName: 'Web-01',
+    severity: 'low',
+    status: 'resolved',
+    title: 'Latency spike resolved',
+    description: 'Response time spike to 420ms detected and auto-resolved after cache warmup.',
+    metric: 'Latency',
+    threshold: 300,
+    current: 110,
+    createdAt: minutesAgo(90),
+    prediction: 'Resolved. No further action needed.',
+  },
+];
+
+export const activityStream: ActivityEvent[] = [
+  {
+    id: 'act-001',
+    type: 'alert',
+    message: 'Critical disk exhaustion alert triggered on DB-Master',
+    serverName: 'DB-Master',
+    timestamp: minutesAgo(8),
+    severity: 'critical',
+  },
+  {
+    id: 'act-002',
+    type: 'alert',
+    message: 'High CPU saturation alert on DB-Master',
+    serverName: 'DB-Master',
+    timestamp: minutesAgo(12),
+    severity: 'high',
+  },
+  {
+    id: 'act-003',
+    type: 'recovery',
+    message: 'Latency spike on Web-01 auto-resolved after cache warmup',
+    serverName: 'Web-01',
+    timestamp: minutesAgo(18),
+    severity: 'info',
+  },
+  {
+    id: 'act-004',
+    type: 'alert',
+    message: 'Memory pressure detected on Web-01',
+    serverName: 'Web-01',
+    timestamp: minutesAgo(22),
+    severity: 'medium',
+  },
+  {
+    id: 'act-005',
+    type: 'scaling',
+    message: 'Auto-scaler added 2 API gateway instances in eu-west-1',
+    serverName: 'API-GW-01',
+    timestamp: minutesAgo(30),
+    severity: 'info',
+  },
+  {
+    id: 'act-006',
+    type: 'alert',
+    message: 'Queue backlog growing on Queue-Worker-01',
+    serverName: 'Queue-Worker-01',
+    timestamp: minutesAgo(35),
+    severity: 'medium',
+  },
+  {
+    id: 'act-007',
+    type: 'alert',
+    message: 'Storage-01 went offline — no heartbeat received',
+    serverName: 'Storage-01',
+    timestamp: minutesAgo(4),
+    severity: 'critical',
+  },
+  {
+    id: 'act-008',
+    type: 'deployment',
+    message: 'Canary deployment v2.4.1 rolled out to 25% of fleet',
+    serverName: 'LB-01',
+    timestamp: minutesAgo(48),
+    severity: 'info',
+  },
+];
+
+export const riskTrend: RiskTrendPoint[] = (() => {
+  const points: RiskTrendPoint[] = [];
+  let fleetRisk = 42;
+  let critical = 1;
+  let warning = 2;
+  for (let i = 23; i >= 0; i--) {
+    fleetRisk = Math.max(15, Math.min(85, fleetRisk + (Math.random() - 0.45) * 12));
+    if (Math.random() > 0.8) critical = Math.max(0, Math.min(3, critical + (Math.random() > 0.5 ? 1 : -1)));
+    if (Math.random() > 0.7) warning = Math.max(1, Math.min(5, warning + (Math.random() > 0.5 ? 1 : -1)));
+    points.push({
+      timestamp: new Date(now - i * 3600000).toISOString(),
+      fleetRisk: Math.round(fleetRisk),
+      criticalCount: critical,
+      warningCount: warning,
+    });
+  }
+  return points;
+})();
+
+export const serviceHealth: ServiceHealth[] = [
+  { name: 'Web Frontend', status: 'warning', latency: 142, errorRate: 0.8, throughput: 4200, instances: 4 },
+  { name: 'API Gateway', status: 'healthy', latency: 38, errorRate: 0.02, throughput: 18500, instances: 6 },
+  { name: 'Database Cluster', status: 'critical', latency: 320, errorRate: 2.1, throughput: 8900, instances: 3 },
+  { name: 'Cache Layer', status: 'healthy', latency: 2, errorRate: 0, throughput: 67000, instances: 3 },
+  { name: 'Message Queue', status: 'warning', latency: 89, errorRate: 0.3, throughput: 3200, instances: 2 },
+  { name: 'ML Inference', status: 'healthy', latency: 210, errorRate: 0.1, throughput: 850, instances: 2 },
+  { name: 'Object Storage', status: 'critical', latency: 0, errorRate: 100, throughput: 0, instances: 1 },
+];
